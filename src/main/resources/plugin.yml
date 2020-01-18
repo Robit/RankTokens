@@ -1,0 +1,5 @@
+name: RankTokens
+author: rm2023
+main: io.github.rm2023.RankTokens.Main
+version: 1.0
+api-version: "1.14"
