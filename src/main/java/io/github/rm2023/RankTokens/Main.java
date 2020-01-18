@@ -10,6 +10,7 @@ import io.github.jorelali.commandapi.api.CommandPermission;
 import io.github.jorelali.commandapi.api.arguments.Argument;
 import io.github.jorelali.commandapi.api.arguments.EntitySelectorArgument;
 import io.github.jorelali.commandapi.api.arguments.EntitySelectorArgument.EntitySelector;
+import io.github.jorelali.commandapi.api.arguments.LiteralArgument;
 import io.github.rm2023.RankTokens.data.Data;
 import net.md_5.bungee.api.ChatColor;
 
@@ -17,17 +18,15 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        // Construct data backbone
+        // Construct data backend
         Data data = new Data(this);
         data.load();
 
-        // Make command argument templates
-        LinkedHashMap<String, Argument> empty = new LinkedHashMap<String, Argument>();
-        LinkedHashMap<String, Argument> onePlayer = new LinkedHashMap<String, Argument>();
-        onePlayer.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
-
         // Make commands... isn't this so much easier than Bukkit <3
-        CommandAPI.getInstance().register("promote", CommandPermission.fromString("ranktokens.promote"), onePlayer, (sender, args) -> {
+        LinkedHashMap<String, Argument> arguments = new LinkedHashMap<String, Argument>();
+        arguments.put("literal", new LiteralArgument("promote"));
+        arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
+        CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             Player toPromote = (Player) args[0];
             data.promote(toPromote);
             if (!sender.equals(toPromote))
@@ -35,18 +34,33 @@ public class Main extends JavaPlugin {
                 sender.sendMessage(ChatColor.GREEN + toPromote.getName() + "'s rank was set to " + data.getRank(toPromote));
             }
         });
-        CommandAPI.getInstance().register("demote", CommandPermission.fromString("ranktokens.demote"), onePlayer, (sender, args) -> {
+
+        arguments = new LinkedHashMap<String, Argument>();
+        arguments.put("literal", new LiteralArgument("demote"));
+        arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
+        CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             Player toDemote = (Player) args[0];
             data.demote(toDemote);
-            if (!sender.equals(toDemote)) {
-                sender.sendMessage(ChatColor.GREEN + toDemote.getName() + "'s rank was set to " + data.getRank(toDemote));
-            }
+            sender.sendMessage(ChatColor.GREEN + toDemote.getName() + "'s rank was set to " + data.getRank(toDemote));
         });
-        CommandAPI.getInstance().register("checkOther", CommandPermission.fromString("ranktokens.checkOther"), onePlayer, (sender, args) -> {
+
+        arguments = new LinkedHashMap<String, Argument>();
+        arguments.put("literal", new LiteralArgument("checkOther"));
+        arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
+        CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             Player toCheck = (Player) args[0];
             sender.sendMessage(ChatColor.GREEN + "Player " + toCheck.getName() + " has a rank of " + data.getRank(toCheck) + ".");
         });
-        CommandAPI.getInstance().register("check", CommandPermission.fromString("ranktokens.check"), empty, (sender, args) -> {
+
+        arguments = new LinkedHashMap<String, Argument>();
+        arguments.put("literal", new LiteralArgument("reload"));
+        CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
+            data.load();
+            sender.sendMessage(ChatColor.GREEN + "Reload complete.");
+        });
+
+        // Register user commands
+        CommandAPI.getInstance().register("checkRank", CommandPermission.fromString("ranktokens.user"), new LinkedHashMap<String, Argument>(), (sender, args) -> {
             Player toCheck = (Player) sender;
             sender.sendMessage(ChatColor.GREEN + "You, " + toCheck.getName() + " have a rank of " + data.getRank(toCheck) + ".");
         });
