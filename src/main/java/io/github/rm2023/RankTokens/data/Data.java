@@ -7,8 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
+import org.bukkit.Statistic;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -100,6 +100,7 @@ public class Data {
             newPlayer.set("name", p.getName());
             newPlayer.set("rank", 0);
             newPlayer.set("queuedCommands", new ArrayList<String>());
+            newPlayer.set("playtime", 0);
             save();
             return true;
         }
@@ -258,17 +259,23 @@ public class Data {
         return getPlayerData(p).getStringList("queuedCommands");
     }
 
-    public void onLogin(Player p) {
+    public void update(Player p) {
         ConfigurationSection player = getPlayerData(p);
         player.set("name", p.getName());
         for (String cmd : player.getStringList("queuedCommands")) {
             String command = formatCommand(cmd, p.getName(), Integer.toString(getRank(p)));
-            plugin.getLogger().info("Running queued command " + command + " on login.");
-            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
-            });
+            plugin.getLogger().info("Running queued command " + command);
+            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
         }
         player.set("queuedCommands", new ArrayList<String>());
+        int playtime = p.getStatistic(Statistic.PLAY_ONE_MINUTE) / 1200; // 'cuz the stat measures ticks, not minutes played...
+        for (Integer playtimeThreshold : config.getIntegerList("playtimeRewardTimes")) {
+            if (player.getInt("playtime") < playtimeThreshold && playtime >= playtimeThreshold) {
+                p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "You have been automatically given an Aegis Rank for playing " + playtimeThreshold + " minutes!");
+                promote(p);
+            }
+        }
+        player.set("playtime", playtime);
         save();
     }
 }

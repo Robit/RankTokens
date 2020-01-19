@@ -2,8 +2,10 @@ package io.github.rm2023.RankTokens;
 
 import java.util.LinkedHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import io.github.jorelali.commandapi.api.CommandAPI;
 import io.github.jorelali.commandapi.api.CommandPermission;
@@ -21,10 +23,12 @@ import net.md_5.bungee.api.ChatColor;
 public class Main extends JavaPlugin {
 
     static public Data data;
+    static public Main plugin;
 
     @Override
     public void onLoad() {
         // Construct data backend
+        plugin = this;
         data = new Data(this);
         data.load();
 
@@ -174,5 +178,15 @@ public class Main extends JavaPlugin {
     public void onEnable() {
         // HEY! LISTEN!
         getServer().getPluginManager().registerEvents(new LoginListener(), this);
+        new UpdateTask().runTaskTimer(this, 20, 1200);
+    }
+
+    private class UpdateTask extends BukkitRunnable {
+        @Override
+        public void run() {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                data.update(p);
+            }
+        }
     }
 }
