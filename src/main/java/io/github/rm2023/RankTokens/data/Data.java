@@ -14,6 +14,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import io.github.rm2023.RankTokens.Main;
 import net.md_5.bungee.api.ChatColor;
@@ -86,6 +87,7 @@ public class Data {
 
     public void save() {
         try {
+            config.save(configFile);
             data.save(dataFile);
         } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Error saving RankToken information!");
@@ -93,7 +95,7 @@ public class Data {
         }
     }
 
-    private boolean createEntry(Player p) {
+    protected boolean createEntry(Player p) {
         if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
             plugin.getLogger().log(Level.INFO, "Creating new rank data entry for player " + p.getName());
             ConfigurationSection newPlayer = data.createSection(p.getUniqueId().toString());
@@ -107,20 +109,24 @@ public class Data {
         return false;
     }
 
-    private ConfigurationSection getPlayerData(Player p) {
+    protected ConfigurationSection getPlayerData(Player p) {
         if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
             createEntry(p);
         }
         return data.getConfigurationSection(p.getUniqueId().toString());
     }
 
-    private ConfigurationSection getPlayerData(String p) {
+    protected ConfigurationSection getPlayerData(String p) {
         for (String playerId : data.getKeys(false)) {
             if (data.getConfigurationSection(playerId).getString("name").equals(p)) {
                 return data.getConfigurationSection(playerId);
             }
         }
         return null;
+    }
+
+    protected ConfigurationSection getRankInfo(int rank) {
+        return config.getConfigurationSection("ranks").getConfigurationSection(Integer.toString(rank));
     }
 
     protected List<ConfigurationSection> getPlayers(int rank) {
@@ -139,7 +145,22 @@ public class Data {
         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 1);
         p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "You have been promoted to Aeigis Rank " + getRank(p));
         save();
-        // TODO: Add command execution stuffs
+        ConfigurationSection rankInfo = getRankInfo(getRank(p));
+        if (rankInfo == null) {
+            return true;
+        }
+        List<String> description = rankInfo.getStringList("description");
+        if (description != null) {
+            p.sendMessage(description.toArray(new String[description.size()]));
+        }
+        List<String> commands = rankInfo.getStringList("commandsOnLevelUp");
+        if (commands != null) {
+            for (String cmd : commands) {
+                String command = formatCommand(cmd, p.getName(), Integer.toString(getRank(p)));
+                plugin.getLogger().info("Running levelup command " + command);
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+            }
+        }
         return true;
     }
 
@@ -149,9 +170,18 @@ public class Data {
             return false;
         }
         playerData.set("rank", getRank(p) + 1);
-        plugin.getLogger().log(Level.INFO, p + " has been promoted to rank " + getRank(p));
+        plugin.getLogger().log(Level.INFO, p + " has been promoted to rank " + getRank(p) + " (level up commands queued for next login)");
         save();
-        // TODO: Add command execution stuffs
+        ConfigurationSection rankInfo = getRankInfo(getRank(p));
+        if (rankInfo == null) {
+            return true;
+        }
+        List<String> commands = rankInfo.getStringList("commandsOnLevelUp");
+        if (commands != null) {
+            for (String cmd : commands) {
+                queue(p, cmd);
+            }
+        }
         return true;
     }
 
@@ -277,5 +307,13 @@ public class Data {
         }
         player.set("playtime", playtime);
         save();
+    }
+
+    public void setToken(ItemStack token) {
+        config.set("token", token);
+    }
+
+    public ItemStack getToken() {
+        return config.getItemStack("token");
     }
 }
