@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -131,7 +132,7 @@ public class Main extends JavaPlugin {
         arguments.put("command", new GreedyStringArgument());
         CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             data.unQueue((String) args[1], (Integer) args[0]);
-            sender.sendMessage(ChatColor.GREEN + "Command " + data.formatCommand((String) args[1], ChatColor.BLUE + "%player%" + ChatColor.GREEN, ChatColor.BLUE + "%rank%" + ChatColor.GREEN) + " has been unqueued for players currently in rank " + (Integer) args[0] + " and above.");
+            sender.sendMessage(ChatColor.GREEN + "Command " + data.formatCommand((String) args[1], ChatColor.BLUE + "%player%" + ChatColor.GREEN, ChatColor.BLUE + "%rank%" + ChatColor.GREEN) + " has been unqueued for players currently in rank " + (Integer) args[0] + " and above");
         });
 
         arguments = new LinkedHashMap<String, Argument>();
@@ -140,10 +141,10 @@ public class Main extends JavaPlugin {
         arguments.put("command", new GreedyStringArgument());
         CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             if (!data.unQueue((String) args[1], (String) args[0])) {
-                sender.sendMessage(ChatColor.GREEN + "An error occured. Player is not in database.");
+                sender.sendMessage(ChatColor.RED + "An error occured. Player is not in database.");
                 return;
             }
-            sender.sendMessage(ChatColor.GREEN + "Command " + data.formatCommand((String) args[1], ChatColor.BLUE + "%player%" + ChatColor.GREEN, ChatColor.BLUE + "%rank%" + ChatColor.GREEN) + " has been unqueued for player " + (String) args[0] + " and above.");
+            sender.sendMessage(ChatColor.GREEN + "Command " + data.formatCommand((String) args[1], ChatColor.BLUE + "%player%" + ChatColor.GREEN, ChatColor.BLUE + "%rank%" + ChatColor.GREEN) + " has been unqueued for player " + (String) args[0]);
         });
 
         arguments = new LinkedHashMap<String, Argument>();
@@ -159,26 +160,47 @@ public class Main extends JavaPlugin {
         arguments.put("player", new StringArgument());
         CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
             if (!data.resetQueue((String) args[0])) {
-                sender.sendMessage(ChatColor.GREEN + "An error occured. Player is not in database.");
+                sender.sendMessage(ChatColor.RED + "An error occured. Player is not in database.");
                 return;
             }
-            sender.sendMessage("The queue has been reset for players currently in rank " + (Integer) args[0] + " and above.");
+            sender.sendMessage("The queue has been reset for player " + (String) args[0] + " and above.");
         });
 
         arguments = new LinkedHashMap<String, Argument>();
         arguments.put("literal", new LiteralArgument("setToken"));
         CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
-            if (!data.resetQueue((String) args[0])) {
-                sender.sendMessage(ChatColor.GREEN + "An error occured. Player is not in database.");
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "You must be a player to do this!");
                 return;
             }
-            sender.sendMessage("The queue has been reset for players currently in rank " + (Integer) args[0] + " and above.");
+            Player p = (Player) sender;
+            ItemStack newToken = p.getInventory().getItemInMainHand().clone();
+            if (newToken == null || newToken.getAmount() == 0) {
+                sender.sendMessage(ChatColor.RED + "Please hold an item in your main hand that you want to set to the token.");
+                return;
+            }
+            newToken.setAmount(1);
+            data.setToken(newToken);
+            sender.sendMessage(ChatColor.GREEN + "Token set to the item in your main hand. Please note that the token should be a unique, NON vanilla-attainable item and that the previous token will no longer work (adding lore to a vanilla attainable item will also work, as long as players can't add that lore to items).");
+        });
+
+        arguments = new LinkedHashMap<String, Argument>();
+        arguments.put("literal", new LiteralArgument("giveToken"));
+        arguments.put("player", new EntitySelectorArgument(EntitySelector.ONE_PLAYER));
+        CommandAPI.getInstance().register("ranktokens", CommandPermission.fromString("ranktokens.admin"), arguments, (sender, args) -> {
+            Player toGive = (Player) args[0];
+            if (!toGive.getInventory().addItem(data.getToken()).isEmpty()) {
+                sender.sendMessage(ChatColor.RED + "An error occured. The token may have not been given.");
+                this.getLogger().severe("Error giving token to " + toGive.getName());
+                return;
+            }
+            sender.sendMessage(ChatColor.GREEN + "Token given to " + toGive.getName());
         });
 
         // Register user commands
         CommandAPI.getInstance().register("checkRank", CommandPermission.fromString("ranktokens.check"), new LinkedHashMap<String, Argument>(), (sender, args) -> {
             Player toCheck = (Player) sender;
-            sender.sendMessage(ChatColor.GREEN + "You, " + toCheck.getName() + " have a rank of " + data.getRank(toCheck) + ".");
+            sender.sendMessage(ChatColor.GREEN + "You, " + toCheck.getName() + ", have a rank of " + data.getRank(toCheck) + ".");
         });
     }
 

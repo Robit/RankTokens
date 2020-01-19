@@ -311,6 +311,7 @@ public class Data {
 
     public void setToken(ItemStack token) {
         config.set("token", token);
+        save();
     }
 
     public ItemStack getToken() {
