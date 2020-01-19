@@ -317,4 +317,19 @@ public class Data {
     public ItemStack getToken() {
         return config.getItemStack("token");
     }
+
+    public void onRespawn(Player p) {
+        ConfigurationSection rankInfo = getRankInfo(getRank(p));
+        if (rankInfo == null) {
+            return;
+        }
+        List<String> commands = rankInfo.getStringList("commandsOnRespawn");
+        if (commands != null) {
+            for (String cmd : commands) {
+                String command = formatCommand(cmd, p.getName(), Integer.toString(getRank(p)));
+                plugin.getLogger().info("Running respawn command " + command);
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+            }
+        }
+    }
 }

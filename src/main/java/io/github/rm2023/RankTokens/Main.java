@@ -19,6 +19,8 @@ import io.github.jorelali.commandapi.api.arguments.LiteralArgument;
 import io.github.jorelali.commandapi.api.arguments.StringArgument;
 import io.github.rm2023.RankTokens.data.Data;
 import io.github.rm2023.RankTokens.listener.LoginListener;
+import io.github.rm2023.RankTokens.listener.RespawnListener;
+import io.github.rm2023.RankTokens.listener.TokenRedeemListener;
 import net.md_5.bungee.api.ChatColor;
 
 public class Main extends JavaPlugin {
@@ -207,6 +209,8 @@ public class Main extends JavaPlugin {
     public void onEnable() {
         // HEY! LISTEN!
         getServer().getPluginManager().registerEvents(new LoginListener(), this);
+        getServer().getPluginManager().registerEvents(new RespawnListener(), this);
+        getServer().getPluginManager().registerEvents(new TokenRedeemListener(), this);
         new UpdateTask().runTaskTimer(this, 20, 1200);
     }
 

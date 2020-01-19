@@ -13,6 +13,7 @@ token:
     - Right click to redeem...
 # commandsOnLevelUp are commands that are executed from console when a player levels up to this rank (ie. assigning permission groups or one time rewardss). 
 # commandsOnRespawn executes from console when a player who has this level respawns (ie. giving permanant potion effects). You can use %player% to specify player and %rank% to specify rank.
+# descriptions are sent to players when they redeem a token or are leveled up using /ranktokens promote. They can use minecraft color codes.
 ranks:
   '1':
     commandsOnLevelUp:
@@ -34,7 +35,7 @@ ranks:
     description:
     - yourdescriptionhere
     - yourdescriptionhere
-# These are thresholds in minutes that a player will automatically be promoted to the next rank at.
+# These are thresholds in minutes that a player will automatically be promoted to the next rank at. Useful for playtime incentives!
 playtimeRewardTimes:
 - 60
 - 360
