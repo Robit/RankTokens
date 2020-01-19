@@ -3,6 +3,7 @@ package io.github.rm2023.RankTokens.data;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -111,6 +112,82 @@ public class Data {
             createEntry(p);
         }
         return data.getConfigurationSection(p.getUniqueId().toString()).getInt("rank", 0);
+    }
+
+    protected List<ConfigurationSection> getPlayers(int rank) {
+        LinkedList<ConfigurationSection> toReturn = new LinkedList<ConfigurationSection>();
+        for (String playerId : data.getKeys(false)) {
+            if (data.getConfigurationSection(playerId).getInt("rank") >= rank) {
+                toReturn.add(data.getConfigurationSection(playerId));
+            }
+        }
+        return toReturn;
+    }
+
+    public String formatCommand(String cmd, String name, String rank) {
+        return cmd.replace("%player%", name).replace("%rank%", rank);
+    }
+
+    public boolean queue(String command, int rank) {
+        for (ConfigurationSection player : getPlayers(rank)) {
+            List<String> newQueue = player.getStringList("queuedCommands");
+            newQueue.add(formatCommand(command, player.getName(), Integer.toString(rank)));
+            player.set("queuedCommands", newQueue);
+        }
+        save();
+        return true;
+    }
+
+    public boolean queue(String command, Player p) {
+        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
+            createEntry(p);
+        }
+        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
+        List<String> newQueue = player.getStringList("queuedCommands");
+        newQueue.add(formatCommand(command, p.getName(), Integer.toString(getRank(p))));
+        player.set("queuedCommands", newQueue);
+        save();
+        return true;
+    }
+
+    public boolean unQueue(String command, int rank) {
+        for (ConfigurationSection player : getPlayers(rank)) {
+            List<String> newQueue = player.getStringList("queuedCommands");
+            newQueue.remove(formatCommand(command, player.getName(), Integer.toString(rank)));
+            player.set("queuedCommands", newQueue);
+        }
+        save();
+        return true;
+    }
+
+    public boolean unQueue(String command, Player p) {
+        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
+            createEntry(p);
+        }
+        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
+        List<String> newQueue = player.getStringList("queuedCommands");
+        newQueue.remove(formatCommand(command, p.getName(), Integer.toString(getRank(p))));
+        player.set("queuedCommands", newQueue);
+        save();
+        return true;
+    }
+
+    public boolean resetQueue(String command, int rank) {
+        for (ConfigurationSection player : getPlayers(rank)) {
+            player.set("queuedCommands", new ArrayList<String>());
+        }
+        save();
+        return true;
+    }
+
+    public boolean resetQueue(String command, Player p) {
+        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
+            createEntry(p);
+        }
+        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
+        player.set("queuedCommands", new ArrayList<String>());
+        save();
+        return true;
     }
 
     public List<String> getQueuedCommands(Player p) {
