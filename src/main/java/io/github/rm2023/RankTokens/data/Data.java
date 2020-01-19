@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -73,6 +75,7 @@ public class Data {
         if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
             plugin.getLogger().log(Level.INFO, "Creating new rank data entry for player " + p.getName());
             ConfigurationSection newPlayer = data.createSection(p.getUniqueId().toString());
+            newPlayer.set("name", p.getName());
             newPlayer.set("rank", 0);
             newPlayer.set("queuedCommands", new ArrayList<String>());
             save();
@@ -81,37 +84,20 @@ public class Data {
         return false;
     }
 
-    public boolean promote(Player p) {
+    private ConfigurationSection getPlayerData(Player p) {
         if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
             createEntry(p);
         }
-        data.getConfigurationSection(p.getUniqueId().toString()).set("rank", getRank(p) + 1);
-        plugin.getLogger().log(Level.INFO, p.getName() + " has been promoted to rank " + getRank(p));
-        p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "You have been promoted to Aeigis Rank " + getRank(p));
-        save();
-        // TODO: Add command execution stuffs
-        return true;
+        return data.getConfigurationSection(p.getUniqueId().toString());
     }
 
-    public boolean demote(Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
-            createEntry(p);
-            return false;
+    private ConfigurationSection getPlayerData(String p) {
+        for (String playerId : data.getKeys(false)) {
+            if (data.getConfigurationSection(playerId).getString("name").equals(p)) {
+                return data.getConfigurationSection(playerId);
+            }
         }
-        if (getRank(p) == 0) {
-            return false;
-        }
-        data.getConfigurationSection(p.getUniqueId().toString()).set("rank", getRank(p) - 1);
-        plugin.getLogger().log(Level.INFO, p.getName() + " has been demoted to rank " + getRank(p));
-        save();
-        return true;
-    }
-
-    public int getRank(Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
-            createEntry(p);
-        }
-        return data.getConfigurationSection(p.getUniqueId().toString()).getInt("rank", 0);
+        return null;
     }
 
     protected List<ConfigurationSection> getPlayers(int rank) {
@@ -124,6 +110,59 @@ public class Data {
         return toReturn;
     }
 
+    public boolean promote(Player p) {
+        getPlayerData(p).set("rank", getRank(p) + 1);
+        plugin.getLogger().log(Level.INFO, p.getName() + " has been promoted to rank " + getRank(p));
+        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 1);
+        p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "You have been promoted to Aeigis Rank " + getRank(p));
+        save();
+        // TODO: Add command execution stuffs
+        return true;
+    }
+
+    public boolean promote(String p) {
+        ConfigurationSection playerData = getPlayerData(p);
+        if (playerData == null) {
+            return false;
+        }
+        playerData.set("rank", getRank(p) + 1);
+        plugin.getLogger().log(Level.INFO, p + " has been promoted to rank " + getRank(p));
+        save();
+        // TODO: Add command execution stuffs
+        return true;
+    }
+
+    public boolean demote(Player p) {
+        if (getRank(p) == 0) {
+            return false;
+        }
+        getPlayerData(p).set("rank", getRank(p) - 1);
+        plugin.getLogger().log(Level.INFO, p.getName() + " has been demoted to rank " + getRank(p));
+        save();
+        return true;
+    }
+
+    public boolean demote(String p) {
+        if (getRank(p) == 0) {
+            return false;
+        }
+        getPlayerData(p).set("rank", getRank(p) - 1);
+        plugin.getLogger().log(Level.INFO, p + " has been demoted to rank " + getRank(p));
+        save();
+        return true;
+    }
+
+    public int getRank(Player p) {
+        return getPlayerData(p).getInt("rank", 0);
+    }
+
+    public int getRank(String p) {
+        if (getPlayerData(p) == null) {
+            return 0;
+        }
+        return getPlayerData(p).getInt("rank", 0);
+    }
+
     public String formatCommand(String cmd, String name, String rank) {
         return cmd.replace("%player%", name).replace("%rank%", rank);
     }
@@ -131,20 +170,20 @@ public class Data {
     public boolean queue(String command, int rank) {
         for (ConfigurationSection player : getPlayers(rank)) {
             List<String> newQueue = player.getStringList("queuedCommands");
-            newQueue.add(formatCommand(command, player.getName(), Integer.toString(rank)));
+            newQueue.add(command);
             player.set("queuedCommands", newQueue);
         }
         save();
         return true;
     }
 
-    public boolean queue(String command, Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
-            createEntry(p);
+    public boolean queue(String command, String p) {
+        ConfigurationSection player = getPlayerData(p);
+        if (player == null) {
+            return false;
         }
-        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
         List<String> newQueue = player.getStringList("queuedCommands");
-        newQueue.add(formatCommand(command, p.getName(), Integer.toString(getRank(p))));
+        newQueue.add(command);
         player.set("queuedCommands", newQueue);
         save();
         return true;
@@ -153,26 +192,26 @@ public class Data {
     public boolean unQueue(String command, int rank) {
         for (ConfigurationSection player : getPlayers(rank)) {
             List<String> newQueue = player.getStringList("queuedCommands");
-            newQueue.remove(formatCommand(command, player.getName(), Integer.toString(rank)));
+            newQueue.remove(command);
             player.set("queuedCommands", newQueue);
         }
         save();
         return true;
     }
 
-    public boolean unQueue(String command, Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
-            createEntry(p);
+    public boolean unQueue(String command, String p) {
+        ConfigurationSection player = getPlayerData(p);
+        if (player == null) {
+            return false;
         }
-        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
         List<String> newQueue = player.getStringList("queuedCommands");
-        newQueue.remove(formatCommand(command, p.getName(), Integer.toString(getRank(p))));
+        newQueue.remove(command);
         player.set("queuedCommands", newQueue);
         save();
         return true;
     }
 
-    public boolean resetQueue(String command, int rank) {
+    public boolean resetQueue(int rank) {
         for (ConfigurationSection player : getPlayers(rank)) {
             player.set("queuedCommands", new ArrayList<String>());
         }
@@ -180,20 +219,34 @@ public class Data {
         return true;
     }
 
-    public boolean resetQueue(String command, Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
-            createEntry(p);
+    public boolean resetQueue(String p) {
+        ConfigurationSection player = getPlayerData(p);
+        if (player == null) {
+            return false;
         }
-        ConfigurationSection player = data.getConfigurationSection(p.getUniqueId().toString());
         player.set("queuedCommands", new ArrayList<String>());
         save();
         return true;
     }
 
-    public List<String> getQueuedCommands(Player p) {
-        if (data.getConfigurationSection(p.getUniqueId().toString()) == null) {
+    public List<String> getQueuedCommands(String p) {
+        if (getPlayerData(p) == null) {
             return new ArrayList<String>();
         }
-        return data.getConfigurationSection(p.getUniqueId().toString()).getStringList("queuedCommands");
+        return getPlayerData(p).getStringList("queuedCommands");
+    }
+
+    public void onLogin(Player p) {
+        ConfigurationSection player = getPlayerData(p);
+        player.set("name", p.getName());
+        for (String cmd : player.getStringList("queuedCommands")) {
+            String command = formatCommand(cmd, p.getName(), Integer.toString(getRank(p)));
+            plugin.getLogger().info("Running queued command " + command + " on login.");
+            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
+            });
+        }
+        player.set("queuedCommands", new ArrayList<String>());
+        save();
     }
 }
