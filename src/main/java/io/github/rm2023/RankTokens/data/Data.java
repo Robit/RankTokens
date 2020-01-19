@@ -39,6 +39,28 @@ public class Data {
         config = new YamlConfiguration();
         try {
             config.load(configFile);
+            /*
+             * ItemStack defaultToken = new ItemStack(Material.DRAGON_BREATH);
+             * 
+             * ItemMeta meta = defaultToken.getItemMeta();
+             * meta.setDisplayName("Elixr of Aegis");
+             * meta.setLore(Arrays.asList("A powerful artifact of time itself",
+             * "Right click to redeem...")); defaultToken.setItemMeta(meta);
+             * config.set("token", defaultToken); ConfigurationSection ranksSection =
+             * config.createSection("ranks"); ConfigurationSection levelOne =
+             * ranksSection.createSection("1"); levelOne.set("commandsOnLevelUp",
+             * Arrays.asList("yourcommandhere", "yourcommandhere2"));
+             * levelOne.set("commandsOnRespawn", Arrays.asList("samplecommand",
+             * "samplecommand2")); levelOne.set("description",
+             * Arrays.asList("yourdescriptionhere", "yourdescriptionhere"));
+             * ConfigurationSection levelTwo = ranksSection.createSection("2");
+             * levelTwo.set("commandsOnLevelUp", Arrays.asList("yourcommandhere",
+             * "yourcommandhere2")); levelTwo.set("commandsOnRespawn",
+             * Arrays.asList("samplecommand", "samplecommand2"));
+             * levelTwo.set("description", Arrays.asList("yourdescriptionhere",
+             * "yourdescriptionhere")); config.set("playtimeRewardTimes", Arrays.asList(60,
+             * 360)); config.save(configFile);
+             */
         } catch (IOException | InvalidConfigurationException e) {
             plugin.getLogger().log(Level.SEVERE, "Error loading RankToken information!");
             e.printStackTrace();

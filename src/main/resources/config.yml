@@ -1,0 +1,40 @@
+# The token the plugin uses to promote players can be set ingame using /ranktokens setToken and received using /ranktokens giveToken
+# If you wish to use a different token, remember to set the token to an item players cannot attain in vanilla, such as by adding lore or impossible enchantments to the item!
+token:
+  ==: org.bukkit.inventory.ItemStack
+  v: 2227
+  type: DRAGON_BREATH
+  meta:
+    ==: ItemMeta
+    meta-type: UNSPECIFIC
+    display-name: Elixr of Aegis
+    lore:
+    - A powerful artifact of time itself
+    - Right click to redeem...
+# commandsOnLevelUp are commands that are executed from console when a player levels up to this rank (ie. assigning permission groups or one time rewardss). 
+# commandsOnRespawn executes from console when a player who has this level respawns (ie. giving permanant potion effects). You can use %player% to specify player and %rank% to specify rank.
+ranks:
+  '1':
+    commandsOnLevelUp:
+    - yourcommandhere
+    - yourcommandhere2
+    commandsOnRespawn:
+    - samplecommand
+    - samplecommand2
+    description:
+    - yourdescriptionhere
+    - yourdescriptionhere
+  '2':
+    commandsOnLevelUp:
+    - yourcommandhere
+    - yourcommandhere2
+    commandsOnRespawn:
+    - samplecommand
+    - samplecommand2
+    description:
+    - yourdescriptionhere
+    - yourdescriptionhere
+# These are thresholds in minutes that a player will automatically be promoted to the next rank at.
+playtimeRewardTimes:
+- 60
+- 360
